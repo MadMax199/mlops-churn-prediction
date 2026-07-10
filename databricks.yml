@@ -1,0 +1,19 @@
+# This is a Declarative Automation Bundle definition for mlops-churn-prediction.
+# The Databricks extension requires databricks.yml configuration file.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+
+bundle:
+  name: mlops-churn-prediction
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-ffd64f04-ac70.cloud.databricks.com
+
+  ## Optionally, there could be 'staging' or 'prod' targets here.
+  #
+  # prod:
+  #   workspace:
+  #     host: https://dbc-ffd64f04-ac70.cloud.databricks.com
