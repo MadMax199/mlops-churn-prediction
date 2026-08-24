@@ -8,8 +8,12 @@ from sklearn.model_selection import train_test_split
 from churn_prediction.config import DataConfig, SplitConfig
 
 
-def load_databricks_table(spark: Any, config: DataConfig) -> pd.DataFrame:
+def load_databricks_table(spark: Any | None, config: DataConfig) -> pd.DataFrame:
     """Load the configured Databricks table and return a local Pandas frame."""
+    if spark is None:
+        from churn_prediction.session import get_spark_session
+
+        spark = get_spark_session()
     spark_frame = spark.table(config.source_table)
     frame = spark_frame.toPandas()
     validate_dataset(frame, config)
@@ -55,4 +59,3 @@ def split_features_target(
         random_state=split_config.random_state,
         stratify=target,
     )
-

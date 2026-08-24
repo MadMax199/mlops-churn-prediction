@@ -36,8 +36,7 @@ def load_config(path: str | Path) -> PipelineConfig:
 
     if not 0 < split.test_size < 1:
         raise ValueError("split.test_size must be between 0 and 1")
-    if data.source_table.startswith("REPLACE_WITH_"):
-        raise ValueError("Set data.source_table in configs/pipeline.yaml")
+    if not 2 <= len(data.source_table.split(".")) <= 3:
+        raise ValueError("data.source_table must use schema.table or catalog.schema.table")
 
     return PipelineConfig(data=data, split=split)
-
