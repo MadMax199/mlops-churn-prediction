@@ -1,0 +1,12 @@
+data:
+  # Replace with the three-level Databricks table name, for example:
+  # samples.telco.customer_churn
+  source_table: "REPLACE_WITH_CATALOG.SCHEMA.TABLE"
+  target_column: "churn"
+  id_columns: []
+  exclude_columns: []
+
+split:
+  test_size: 0.20
+  random_state: 42
+

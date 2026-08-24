@@ -1,22 +1,27 @@
-# 🚀 MLOps Churn Prediction
+# MLOps Churn Prediction
 
-Ein End-to-End-MLOps-Projekt zur Vorhersage von Kundenabwanderung (Customer Churn) mit einer skalierbaren Machine-Learning-Pipeline auf Databricks.
+Initial, reproducible data pipeline for an internal Databricks churn dataset.
 
-## Inhalte
-- 📊 Datenaufbereitung und Feature Engineering
-- 🤖 Entwicklung und Training von Churn-Vorhersagemodellen
-- 📈 Experiment-Tracking mit MLflow
-- ⚡ Training und Inferenz auf Databricks
-- 🔄 Automatisierung mit CI/CD
-- 📦 Reproduzierbare und produktionsnahe MLOps-Pipeline
+## Current scope
 
-## Technologie-Stack
-- Python
-- Databricks
-- PySpark
-- MLflow
-- Scikit-learn
-- GitHub Actions
+- Configuration-based Databricks table loading
+- Dataset validation for binary churn classification
+- Reproducible stratified train/test split
+- Separate numeric and categorical preprocessing
+- Initial unit tests
 
-## Ziel
-Ziel dieses Projekts ist der Aufbau einer produktionsreifen MLOps-Pipeline zur Vorhersage von Kundenabwanderung – von der Datenverarbeitung über das Modelltraining bis hin zur automatisierten Bereitstellung und Überwachung.
+## Configure the data source
+
+Set the actual three-level Databricks table name and schema-specific columns in
+`configs/pipeline.yaml`. Customer identifiers belong in `id_columns`; columns
+that would leak future information belong in `exclude_columns`.
+
+## Local setup
+
+```bash
+python -m pip install -e ".[dev]"
+pytest
+```
+
+The next implementation step is a training pipeline with a logistic-regression
+baseline and MLflow logging.
