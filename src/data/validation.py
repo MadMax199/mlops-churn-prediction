@@ -2,6 +2,16 @@ import pandas as pd
 
 
 def validate_training_data(df: pd.DataFrame, id_column: str, target_column: str) -> None:
+    """Validiert den Trainingsdatensatz für das Modelltraining.
+
+        Args:
+            df: Der Trainingsdatensatz als pandas DataFrame.
+            id_column: Der Name der ID-Spalte.
+            target_column: Der Name der Zielvariable-Spalte.
+
+        Raises:
+            ValueError: Wenn die Validierung fehlschlägt.
+        """
     required = {id_column, target_column}
     missing = required.difference(df.columns)
     if missing:

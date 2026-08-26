@@ -2,7 +2,7 @@ from pyspark.sql import DataFrame, functions as F
 
 
 
-def clean_user(df:DataFrame) -> DataFrame:
+def clean_users(df:DataFrame) -> DataFrame:
     
     """Bereinigt den User DataFram nacheem es aus der csv gelesen wurde für weitere Verarbeitungsschritte"""
     return(df.select(
@@ -45,18 +45,24 @@ def clean_orders(df:DataFrame) -> DataFrame:
 
 def clean_events(df: DataFrame) -> DataFrame:
     """Bereinigt den Event DataFrame nacheem es aus der csv gelesen wurde für weitere Verarbeitungsschritte"""
-    event_id = "event_id" if "event_id" in df.columns else "id"
-    event_time = "event_time" if "event_time" in df.columns else "timestamp"
+   
     return (
         df.select(
-            F.col(event_id).alias("event_id"),
-            "user_id",
-            "session_id",
+            F.col("event_id"),
+            F.col("user_id"),
+            F.col("session_id"),
             F.lower(F.trim("platform")).alias("platform"),
             F.lower(F.trim("action")).alias("action"),
-            F.to_timestamp(event_time).alias("event_time"),
+            F.to_timestamp("date",
+                            "MM-dd-yyyy HH:mm:ss",
+                        ).alias("event_time"),
         )
-        .filter(F.col("event_id").isNotNull() & F.col("user_id").isNotNull())
-        .fillna({"platform": "unknown", "action": "unknown"})
-        .dropDuplicates(["event_id"])
+        .filter(
+            F.col("event_id").isNotNull()
+            & F.col("user_id").isNotNull()
+        )
+        .fillna({
+            "platform": "unknown",
+            "action": "unknown",
+        })
     )

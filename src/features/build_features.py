@@ -6,16 +6,20 @@ from src.session import get_spark_session
 
 
 def aggregate_orders(df: DataFrame) -> DataFrame:
+    """Aggregiert den Orders DataFrame auf User Ebene."""
+
     return df.groupBy("user_id").agg(
         F.count("order_id").alias("order_count"),
         F.sum("amount").alias("total_amount"),
         F.avg("amount").alias("avg_order_amount"),
         F.sum("item_count").alias("total_items"),
-        F.max("transaction_date").alias("last_transaction"),
+        F.max("creation_date").alias("last_transaction"),
     )
 
 
 def aggregate_events(df: DataFrame) -> DataFrame:
+    """Aggregiert den Events DataFrame auf User Ebene."""
+
     return df.groupBy("user_id").agg(
         F.count("event_id").alias("event_count"),
         F.countDistinct("session_id").alias("session_count"),
@@ -25,7 +29,8 @@ def aggregate_events(df: DataFrame) -> DataFrame:
 
 
 def build_customer_features(users: DataFrame, orders: DataFrame, events: DataFrame) -> DataFrame:
-    """Builds one row per customer. Left joins retain users without activity."""
+    """Baut die Feature auf Baisis der gejointen Datennenframes für User, Orders und Events auf."""
+
     today = F.current_date()
     return (
         users.join(aggregate_orders(orders), "user_id", "left")
