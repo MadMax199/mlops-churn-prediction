@@ -13,7 +13,7 @@ def prepare_environment() -> None:
 
 
 def get_spark_session():
-    """Creates a Databricks Connect Spark session from unified auth settings."""
+    """Arellt die Databricks Verbindung her."""
     prepare_environment()
     from databricks.connect import DatabricksSession
 
