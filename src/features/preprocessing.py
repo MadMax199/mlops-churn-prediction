@@ -5,6 +5,9 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 def build_preprocessor(frame):
+
+    """Baut einen Preprocessor für den gegebenen DataFrame."""
+
     numeric = frame.select_dtypes(include=["number", "bool"]).columns.tolist()
     categorical = [column for column in frame.columns if column not in numeric]
     numeric_pipeline = Pipeline([
