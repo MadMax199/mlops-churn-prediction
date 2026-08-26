@@ -1,11 +1,20 @@
-from __future__ import annotations
+import os
+from pathlib import Path
 
-from databricks.connect import DatabricksSession
 from dotenv import load_dotenv
 
 
-def get_spark_session() -> DatabricksSession:
-    """Create a Spark session backed by remote Databricks serverless compute."""
+def prepare_environment() -> None:
     load_dotenv()
-    return DatabricksSession.builder.validateSession(True).getOrCreate()
+    cli_path = os.getenv("DATABRICKS_CLI_PATH")
+    if cli_path:
+        cli_dir = str(Path(cli_path).expanduser().resolve().parent)
+        os.environ["PATH"] = cli_dir + os.pathsep + os.environ.get("PATH", "")
 
+
+def get_spark_session():
+    """Creates a Databricks Connect Spark session from unified auth settings."""
+    prepare_environment()
+    from databricks.connect import DatabricksSession
+
+    return DatabricksSession.builder.validateSession(True).getOrCreate()

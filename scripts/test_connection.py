@@ -1,27 +1,19 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
-from churn_prediction.config import load_config
-from churn_prediction.session import get_spark_session
+from src.config import load_config
+from src.session import get_spark_session
 
 
 def main() -> None:
-    project_root = Path(__file__).resolve().parents[1]
-    config = load_config(project_root / "configs" / "pipeline.yaml")
-    source_table = os.getenv("CHURN_SOURCE_TABLE", config.data.source_table)
-
+    config = load_config().values
     spark = get_spark_session()
-    current_user = spark.sql("SELECT current_user() AS user").first()["user"]
-    row_count = spark.table(source_table).count()
-
-    print(f"Connected as: {current_user}")
-    print(f"Source table: {source_table}")
-    print(f"Rows: {row_count:,}")
-    spark.table(source_table).printSchema()
+    identity = spark.sql("SELECT current_user() AS user, current_catalog() AS catalog").first()
+    print(f"Connected as: {identity['user']}")
+    print(f"Current catalog: {identity['catalog']}")
+    for name in ("users_path", "orders_path", "events_path"):
+        path = config["data"][name]
+        print(f"Configured {name}: {path}")
 
 
 if __name__ == "__main__":
     main()
-

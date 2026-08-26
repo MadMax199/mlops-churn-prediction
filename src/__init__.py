@@ -1,2 +1,2 @@
-"""Churn prediction pipeline package."""
+"""MLOps churn prediction package."""
 

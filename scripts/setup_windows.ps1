@@ -19,7 +19,9 @@ if (-not (Test-Path ".venv")) {
 }
 
 & .\.venv\Scripts\python.exe -m pip install --upgrade pip
-& .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+& .\.venv\Scripts\python.exe -m pip uninstall -y pyspark 2>$null
+& .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+& .\.venv\Scripts\python.exe -m pip install -e . --no-deps
 
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
@@ -38,4 +40,3 @@ Write-Host ""
 Write-Host "Then validate Databricks Connect with:"
 Write-Host "databricks-connect test"
 Write-Host "python scripts/test_connection.py"
-

@@ -1,42 +1,27 @@
-from __future__ import annotations
-
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-
-@dataclass(frozen=True)
-class DataConfig:
-    source_table: str
-    target_column: str
-    id_columns: list[str] = field(default_factory=list)
-    exclude_columns: list[str] = field(default_factory=list)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "config.yaml"
 
 
 @dataclass(frozen=True)
-class SplitConfig:
-    test_size: float = 0.2
-    random_state: int = 42
+class Settings:
+    values: dict[str, Any]
+
+    def section(self, name: str) -> dict[str, Any]:
+        return self.values[name]
 
 
-@dataclass(frozen=True)
-class PipelineConfig:
-    data: DataConfig
-    split: SplitConfig
+def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> Settings:
+    with Path(path).open(encoding="utf-8") as handle:
+        values = yaml.safe_load(handle)
+    required = {"databricks", "data", "split", "mlflow", "prediction"}
+    missing = required.difference(values or {})
+    if missing:
+        raise ValueError(f"Missing config sections: {sorted(missing)}")
+    return Settings(values)
 
-
-def load_config(path: str | Path) -> PipelineConfig:
-    with Path(path).open(encoding="utf-8") as config_file:
-        raw: dict[str, Any] = yaml.safe_load(config_file)
-
-    data = DataConfig(**raw["data"])
-    split = SplitConfig(**raw.get("split", {}))
-
-    if not 0 < split.test_size < 1:
-        raise ValueError("split.test_size must be between 0 and 1")
-    if not 2 <= len(data.source_table.split(".")) <= 3:
-        raise ValueError("data.source_table must use schema.table or catalog.schema.table")
-
-    return PipelineConfig(data=data, split=split)
