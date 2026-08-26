@@ -18,4 +18,3 @@ FEATURE_COLUMNS = [
     "days_since_last_transaction",
     "days_since_last_event",
 ]
-

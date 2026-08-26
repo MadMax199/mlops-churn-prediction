@@ -48,6 +48,7 @@ def run() -> None:
 
     mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
     mlflow.set_experiment(config["mlflow"]["experiment_name"])
+    
     for name, estimator in models.items():
         pipeline = Pipeline([("preprocessor", build_preprocessor(X_train)), ("model", estimator)])
         with mlflow.start_run(run_name=name):
@@ -65,8 +66,12 @@ def run() -> None:
             mlflow.log_metrics(metrics)
             signature = infer_signature(X_train, pipeline.predict(X_train))
             mlflow.sklearn.log_model(
-                pipeline, artifact_path="model", signature=signature,
-                input_example=X_train.head(3),
+                    pipeline,
+                    name="model",
+                    signature=signature,
+                    input_example=X_train.head(3),
+                    serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_SKOPS,
+                    skops_trusted_types=["numpy.dtype"],
             )
             print(name, {key: round(value, 4) for key, value in metrics.items()})
 
