@@ -20,6 +20,7 @@ split:
 mlflow:
   tracking_uri: databricks
   experiment_name: /Shared/mlops-churn-prediction
+  registered_model_name: main.mlops_churn.churn_prediction_model
   selection_metric: pr_auc
 
 prediction:
