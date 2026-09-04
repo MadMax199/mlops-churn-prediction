@@ -11,7 +11,6 @@ from src.features.schema import (
     TARGET_COLUMN,
 )
 
-
 CATEGORICAL_COLUMNS = {
     "canal",
     "country",

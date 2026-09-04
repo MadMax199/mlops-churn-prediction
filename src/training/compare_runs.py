@@ -8,7 +8,6 @@ import pandas as pd
 from src.config import load_config
 from src.utils.databricks_auth import configure_databricks_auth
 
-
 RUN_NAMES = [
     "random_forest",
     "random_forest_tuned",

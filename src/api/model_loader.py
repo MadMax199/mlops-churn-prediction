@@ -12,7 +12,6 @@ from src.utils.databricks_auth import (
     configure_databricks_auth,
 )
 
-
 MODEL_ALIAS = "Champion"
 
 STRING_COLUMNS = [

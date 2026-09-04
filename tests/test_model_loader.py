@@ -3,8 +3,8 @@
 import pandas as pd
 
 from src.api.model_loader import (
-    ModelService,
     STRING_COLUMNS,
+    ModelService,
 )
 from src.api.schemas import PredictionRequest
 from src.features.schema import FEATURE_COLUMNS

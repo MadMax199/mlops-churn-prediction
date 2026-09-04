@@ -12,7 +12,6 @@ from src.features.schema import (
 from src.session import get_spark_session
 from src.utils.databricks_auth import configure_databricks_auth
 
-
 MODEL_ALIAS = "Champion"
 SAMPLE_SIZE = 100
 

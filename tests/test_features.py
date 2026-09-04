@@ -8,7 +8,6 @@ from src.features.preprocessing import (
 )
 from src.features.schema import FEATURE_COLUMNS
 
-
 CATEGORICAL_COLUMNS = {
     "canal",
     "country",
