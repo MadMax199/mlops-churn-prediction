@@ -4,7 +4,7 @@ import mlflow
 from mlflow import MlflowClient
 
 from src.config import load_config
-from src.training.compare_runs import configure_databricks_auth
+from src.utils.databricks_auth import configure_databricks_auth
 
 
 def get_selected_run_id(

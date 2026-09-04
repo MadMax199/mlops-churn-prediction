@@ -10,7 +10,7 @@ from src.features.schema import (
     ID_COLUMN,
 )
 from src.session import get_spark_session
-from src.training.compare_runs import configure_databricks_auth
+from src.utils.databricks_auth import configure_databricks_auth
 
 
 MODEL_ALIAS = "Champion"
