@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import mlflow
 import mlflow.sklearn
@@ -42,7 +42,7 @@ def load_customers() -> pd.DataFrame:
 try:
     model, best_run = load_model()
     customers = load_customers()
-except Exception as exc:
+except Exception as exc:  # noqa: BLE001
     st.error(str(exc))
     st.stop()
 
@@ -75,4 +75,4 @@ st.dataframe(
 )
 st.subheader("Risk by channel")
 st.bar_chart(customers.groupby("canal")["churn_probability"].mean().sort_values(ascending=False))
-st.caption(f"Updated: {datetime.now():%Y-%m-%d %H:%M:%S}")
+st.caption(f"Updated: {datetime.now(UTC):%Y-%m-%d %H:%M:%S} UTC")

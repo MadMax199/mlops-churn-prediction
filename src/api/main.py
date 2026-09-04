@@ -88,7 +88,7 @@ def root() -> dict[str, str]:
     response_model=HealthResponse,
 )
 def health(
-    model_service: ModelService = Depends(get_model_service),
+    model_service: ModelService = Depends(get_model_service),  # noqa: B008
 ) -> HealthResponse:
     """Return the API health status."""
 
@@ -103,7 +103,7 @@ def health(
     response_model=ModelInfoResponse,
 )
 def model_info(
-    model_service: ModelService = Depends(get_model_service),
+    model_service: ModelService = Depends(get_model_service),  # noqa: B008
 ) -> ModelInfoResponse:
     """Return information about the loaded model."""
 
@@ -116,7 +116,7 @@ def model_info(
 )
 def predict(
     payload: PredictionRequest,
-    model_service: ModelService = Depends(get_model_service),
+    model_service: ModelService = Depends(get_model_service),  # noqa: B008
 ) -> PredictionResponse:
     """Create a churn prediction."""
 
