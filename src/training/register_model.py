@@ -19,37 +19,24 @@ def get_selected_run_id(
     )
 
     if runs.empty:
-        raise ValueError(
-            "Keine erfolgreichen MLflow-Runs gefunden."
-        )
+        raise ValueError("Keine erfolgreichen MLflow-Runs gefunden.")
 
     run_name_column = "tags.mlflow.runName"
 
-    selection_runs = runs[
-        runs[run_name_column] == "model_selection"
-    ]
+    selection_runs = runs[runs[run_name_column] == "model_selection"]
 
     if selection_runs.empty:
-        raise ValueError(
-            "Kein erfolgreicher model_selection-Run gefunden."
-        )
+        raise ValueError("Kein erfolgreicher model_selection-Run gefunden.")
 
-    latest_selection = (
-        selection_runs
-        .sort_values("start_time", ascending=False)
-        .iloc[0]
-    )
+    latest_selection = selection_runs.sort_values("start_time", ascending=False).iloc[0]
 
-    selected_run_id = latest_selection.get(
-        "params.selected_run_id"
-    )
+    selected_run_id = latest_selection.get("params.selected_run_id")
 
     if not selected_run_id:
-        raise ValueError(
-            "Im model_selection-Run fehlt selected_run_id."
-        )
+        raise ValueError("Im model_selection-Run fehlt selected_run_id.")
 
     return str(selected_run_id)
+
 
 def get_logged_model(
     experiment_id: str,
@@ -73,10 +60,8 @@ def get_logged_model(
         model
         for model in logged_models
         if (
-            getattr(model, "source_run_id", None)
-            == selected_run_id
-            or getattr(model, "run_id", None)
-            == selected_run_id
+            getattr(model, "source_run_id", None) == selected_run_id
+            or getattr(model, "run_id", None) == selected_run_id
         )
     ]
 
@@ -116,36 +101,23 @@ def run() -> None:
     config = load_config().values
     mlflow_config = config["mlflow"]
 
-    mlflow.set_tracking_uri(
-        mlflow_config["tracking_uri"]
-    )
+    mlflow.set_tracking_uri(mlflow_config["tracking_uri"])
 
-    mlflow.set_registry_uri(
-        "databricks-uc"
-    )
+    mlflow.set_registry_uri("databricks-uc")
 
-    experiment = mlflow.get_experiment_by_name(
-        mlflow_config["experiment_name"]
-    )
+    experiment = mlflow.get_experiment_by_name(mlflow_config["experiment_name"])
 
     if experiment is None:
-        raise ValueError(
-            "Das konfigurierte MLflow-Experiment "
-            "wurde nicht gefunden."
-        )
+        raise ValueError("Das konfigurierte MLflow-Experiment wurde nicht gefunden.")
 
-    selected_run_id = get_selected_run_id(
-        experiment.experiment_id
-    )
+    selected_run_id = get_selected_run_id(experiment.experiment_id)
 
     logged_model = get_logged_model(
         experiment.experiment_id,
         selected_run_id,
     )
 
-    registered_model_name = (
-        mlflow_config["registered_model_name"]
-    )
+    registered_model_name = mlflow_config["registered_model_name"]
 
     model_version = mlflow.register_model(
         model_uri=logged_model.model_uri,

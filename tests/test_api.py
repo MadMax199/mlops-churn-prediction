@@ -30,16 +30,10 @@ class FakeModelService:
 
     def __init__(self) -> None:
         self.model = object()
-        self.model_name = (
-            "main.mlops_churn.churn_prediction_model"
-        )
+        self.model_name = "main.mlops_churn.churn_prediction_model"
         self.model_version = "1"
         self.model_alias = "Champion"
-        self.model_uri = (
-            "models:/"
-            "main.mlops_churn.churn_prediction_model"
-            "@Champion"
-        )
+        self.model_uri = "models:/main.mlops_churn.churn_prediction_model@Champion"
 
     def get_model_info(self) -> dict:
         return {
@@ -102,14 +96,10 @@ def test_model_info(client: TestClient) -> None:
 
     result = response.json()
 
-    assert result["model_name"] == (
-        "main.mlops_churn.churn_prediction_model"
-    )
+    assert result["model_name"] == ("main.mlops_churn.churn_prediction_model")
     assert result["model_version"] == "1"
     assert result["model_alias"] == "Champion"
-    assert result["model_uri"].endswith(
-        "@Champion"
-    )
+    assert result["model_uri"].endswith("@Champion")
 
 
 def test_predict(client: TestClient) -> None:
@@ -161,6 +151,4 @@ def test_predict_handles_model_failure(
     )
 
     assert response.status_code == 500
-    assert response.json() == {
-        "detail": "Die Vorhersage ist fehlgeschlagen."
-    }
+    assert response.json() == {"detail": "Die Vorhersage ist fehlgeschlagen."}

@@ -35,15 +35,17 @@ def build_customer_features(users: DataFrame, orders: DataFrame, events: DataFra
     return (
         users.join(aggregate_orders(orders), "user_id", "left")
         .join(aggregate_events(events), "user_id", "left")
-        .fillna({
-            "order_count": 0,
-            "total_amount": 0.0,
-            "avg_order_amount": 0.0,
-            "total_items": 0,
-            "event_count": 0,
-            "session_count": 0,
-            "platform": "unknown",
-        })
+        .fillna(
+            {
+                "order_count": 0,
+                "total_amount": 0.0,
+                "avg_order_amount": 0.0,
+                "total_items": 0,
+                "event_count": 0,
+                "session_count": 0,
+                "platform": "unknown",
+            }
+        )
         .withColumn("days_since_creation", F.datediff(today, "creation_date"))
         .withColumn("days_since_last_activity", F.datediff(today, "last_activity_date"))
         .withColumn("days_since_last_transaction", F.datediff(today, "last_transaction"))
@@ -67,4 +69,3 @@ def run() -> None:
 
 if __name__ == "__main__":
     run()
-

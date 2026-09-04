@@ -22,10 +22,7 @@ from src.api.schemas import (
 
 logging.basicConfig(
     level=logging.INFO,
-    format=(
-        "%(asctime)s | %(levelname)s | "
-        "%(name)s | %(message)s"
-    ),
+    format=("%(asctime)s | %(levelname)s | %(name)s | %(message)s"),
 )
 
 logger = logging.getLogger(__name__)
@@ -51,10 +48,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Churn Prediction API",
-    description=(
-        "Prediction API for the registered "
-        "MLflow Champion model."
-    ),
+    description=("Prediction API for the registered MLflow Champion model."),
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -95,9 +89,7 @@ def root() -> dict[str, str]:
     response_model=HealthResponse,
 )
 def health(
-    model_service: ModelService = Depends(
-        get_model_service
-    ),
+    model_service: ModelService = Depends(get_model_service),
 ) -> HealthResponse:
     """Return the API health status."""
 
@@ -112,15 +104,11 @@ def health(
     response_model=ModelInfoResponse,
 )
 def model_info(
-    model_service: ModelService = Depends(
-        get_model_service
-    ),
+    model_service: ModelService = Depends(get_model_service),
 ) -> ModelInfoResponse:
     """Return information about the loaded model."""
 
-    return ModelInfoResponse(
-        **model_service.get_model_info()
-    )
+    return ModelInfoResponse(**model_service.get_model_info())
 
 
 @app.post(
@@ -129,25 +117,19 @@ def model_info(
 )
 def predict(
     payload: PredictionRequest,
-    model_service: ModelService = Depends(
-        get_model_service
-    ),
+    model_service: ModelService = Depends(get_model_service),
 ) -> PredictionResponse:
     """Create a churn prediction."""
 
     try:
-        prediction = model_service.predict(
-            payload
-        )
+        prediction = model_service.predict(payload)
 
         logger.info(
             "Prediction completed with model version %s",
             model_service.model_version,
         )
 
-        return PredictionResponse(
-            **prediction
-        )
+        return PredictionResponse(**prediction)
 
     except ValueError as error:
         logger.warning(
@@ -161,9 +143,7 @@ def predict(
         ) from error
 
     except Exception as error:
-        logger.exception(
-            "Prediction failed"
-        )
+        logger.exception("Prediction failed")
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

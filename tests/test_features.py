@@ -48,9 +48,7 @@ def create_inference_features() -> pd.DataFrame:
 
     for feature in FEATURE_COLUMNS:
         if feature in CATEGORICAL_COLUMNS:
-            values[feature] = [
-                "previously_unknown_category"
-            ]
+            values[feature] = ["previously_unknown_category"]
         else:
             values[feature] = [4.0]
 
@@ -74,18 +72,12 @@ def test_preprocessor_handles_missing_values() -> None:
 
     preprocessor = build_preprocessor(train)
 
-    transformed = preprocessor.fit_transform(
-        train
-    )
+    transformed = preprocessor.fit_transform(train)
 
-    transformed_array = to_numpy_array(
-        transformed
-    )
+    transformed_array = to_numpy_array(transformed)
 
     assert transformed.shape[0] == len(train)
-    assert np.isfinite(
-        transformed_array
-    ).all()
+    assert np.isfinite(transformed_array).all()
 
 
 def test_preprocessor_handles_unknown_categories() -> None:
@@ -95,18 +87,12 @@ def test_preprocessor_handles_unknown_categories() -> None:
     preprocessor = build_preprocessor(train)
     preprocessor.fit(train)
 
-    transformed = preprocessor.transform(
-        inference
-    )
+    transformed = preprocessor.transform(inference)
 
-    transformed_array = to_numpy_array(
-        transformed
-    )
+    transformed_array = to_numpy_array(transformed)
 
     assert transformed.shape[0] == 1
-    assert np.isfinite(
-        transformed_array
-    ).all()
+    assert np.isfinite(transformed_array).all()
 
 
 def test_training_and_inference_have_same_width() -> None:
@@ -115,18 +101,11 @@ def test_training_and_inference_have_same_width() -> None:
 
     preprocessor = build_preprocessor(train)
 
-    transformed_train = (
-        preprocessor.fit_transform(train)
-    )
+    transformed_train = preprocessor.fit_transform(train)
 
-    transformed_inference = (
-        preprocessor.transform(inference)
-    )
+    transformed_inference = preprocessor.transform(inference)
 
-    assert (
-        transformed_train.shape[1]
-        == transformed_inference.shape[1]
-    )
+    assert transformed_train.shape[1] == transformed_inference.shape[1]
 
 
 def test_preprocessor_preserves_row_count() -> None:
@@ -134,8 +113,6 @@ def test_preprocessor_preserves_row_count() -> None:
 
     preprocessor = build_preprocessor(train)
 
-    transformed = preprocessor.fit_transform(
-        train
-    )
+    transformed = preprocessor.fit_transform(train)
 
     assert transformed.shape[0] == train.shape[0]

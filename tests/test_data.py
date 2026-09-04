@@ -24,12 +24,12 @@ def create_training_frame(
 ) -> pd.DataFrame:
     """Create representative training data."""
 
-    frame = pd.DataFrame({
-        ID_COLUMN: range(number_of_rows),
-        TARGET_COLUMN: [0, 1] * (
-            number_of_rows // 2
-        ),
-    })
+    frame = pd.DataFrame(
+        {
+            ID_COLUMN: range(number_of_rows),
+            TARGET_COLUMN: [0, 1] * (number_of_rows // 2),
+        }
+    )
 
     for feature in FEATURE_COLUMNS:
         if feature in CATEGORICAL_COLUMNS:
@@ -38,10 +38,7 @@ def create_training_frame(
                 "category_b",
             ] * (number_of_rows // 2)
         else:
-            frame[feature] = [
-                float(value)
-                for value in range(number_of_rows)
-            ]
+            frame[feature] = [float(value) for value in range(number_of_rows)]
 
     return frame
 
@@ -92,23 +89,15 @@ def test_split_is_reproducible() -> None:
     second_X_train = second_split[0]
     second_X_test = second_split[1]
 
-    assert (
-        first_X_train.index.tolist()
-        == second_X_train.index.tolist()
-    )
+    assert first_X_train.index.tolist() == second_X_train.index.tolist()
 
-    assert (
-        first_X_test.index.tolist()
-        == second_X_test.index.tolist()
-    )
+    assert first_X_test.index.tolist() == second_X_test.index.tolist()
 
 
 def test_split_excludes_id_and_target() -> None:
     frame = create_training_frame()
 
-    X_train, X_test, _, _ = (
-        split_training_data(frame)
-    )
+    X_train, X_test, _, _ = split_training_data(frame)
 
     assert ID_COLUMN not in X_train.columns
     assert TARGET_COLUMN not in X_train.columns
@@ -119,21 +108,11 @@ def test_split_excludes_id_and_target() -> None:
 def test_split_preserves_target_distribution() -> None:
     frame = create_training_frame()
 
-    _, _, y_train, y_test = (
-        split_training_data(frame)
-    )
+    _, _, y_train, y_test = split_training_data(frame)
 
-    train_distribution = (
-        y_train
-        .value_counts(normalize=True)
-        .sort_index()
-    )
+    train_distribution = y_train.value_counts(normalize=True).sort_index()
 
-    test_distribution = (
-        y_test
-        .value_counts(normalize=True)
-        .sort_index()
-    )
+    test_distribution = y_test.value_counts(normalize=True).sort_index()
 
     pd.testing.assert_series_equal(
         train_distribution,

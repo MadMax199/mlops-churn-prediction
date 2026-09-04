@@ -24,4 +24,3 @@ def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> Settings:
     if missing:
         raise ValueError(f"Missing config sections: {sorted(missing)}")
     return Settings(values)
-

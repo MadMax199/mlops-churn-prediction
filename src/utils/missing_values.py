@@ -27,4 +27,3 @@ def get_missing_values(df: DataFrame, only_missing: bool = False) -> DataFrame:
     return df.sparkSession.createDataFrame(
         rows, ["column", "missing_count", "missing_share"]
     ).orderBy(F.desc("missing_count"), F.asc("column"))
-

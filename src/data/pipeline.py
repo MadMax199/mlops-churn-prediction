@@ -11,7 +11,7 @@ def run() -> None:
     spark = get_spark_session()
     ensure_schema(spark, config["databricks"]["catalog"], config["databricks"]["schema"])
     raw_users, raw_orders, raw_events = load_raw_data(spark, config)
-    
+
     outputs = {
         config["data"]["silver_users_table"]: clean_users(raw_users),
         config["data"]["silver_orders_table"]: clean_orders(raw_orders),
@@ -24,4 +24,3 @@ def run() -> None:
 
 if __name__ == "__main__":
     run()
-

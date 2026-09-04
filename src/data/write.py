@@ -8,5 +8,6 @@ def ensure_schema(spark: SparkSession, catalog: str, schema: str) -> None:
 
 def write_delta_table(df: DataFrame, table_name: str) -> None:
     """Schreibt den DataFrame als Delta-Tabelle in die angegebene Tabelle."""
-    df.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(table_name)
-
+    df.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(
+        table_name
+    )

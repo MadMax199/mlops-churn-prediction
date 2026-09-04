@@ -31,40 +31,25 @@ class ModelService:
         config = load_config().values
         mlflow_config = config["mlflow"]
 
-        mlflow.set_tracking_uri(
-            mlflow_config["tracking_uri"]
-        )
+        mlflow.set_tracking_uri(mlflow_config["tracking_uri"])
 
-        mlflow.set_registry_uri(
-            "databricks-uc"
-        )
+        mlflow.set_registry_uri("databricks-uc")
 
-        self.model_name = (
-            mlflow_config["registered_model_name"]
-        )
+        self.model_name = mlflow_config["registered_model_name"]
         self.model_alias = MODEL_ALIAS
 
-        self.model_uri = (
-            f"models:/{self.model_name}"
-            f"@{self.model_alias}"
-        )
+        self.model_uri = f"models:/{self.model_name}@{self.model_alias}"
 
         client = MlflowClient()
 
-        model_version = (
-            client.get_model_version_by_alias(
-                name=self.model_name,
-                alias=self.model_alias,
-            )
+        model_version = client.get_model_version_by_alias(
+            name=self.model_name,
+            alias=self.model_alias,
         )
 
-        self.model_version = str(
-            model_version.version
-        )
+        self.model_version = str(model_version.version)
 
-        self.model = mlflow.sklearn.load_model(
-            self.model_uri
-        )
+        self.model = mlflow.sklearn.load_model(self.model_uri)
 
     @staticmethod
     def prepare_input(
@@ -79,19 +64,11 @@ class ModelService:
             columns=FEATURE_COLUMNS,
         )
 
-        frame = frame.replace(
-            {None: np.nan}
-        )
+        frame = frame.replace({None: np.nan})
 
-        numeric_columns = [
-            column
-            for column in FEATURE_COLUMNS
-            if column not in STRING_COLUMNS
-        ]
+        numeric_columns = [column for column in FEATURE_COLUMNS if column not in STRING_COLUMNS]
 
-        frame[numeric_columns] = frame[
-            numeric_columns
-        ].astype("float64")
+        frame[numeric_columns] = frame[numeric_columns].astype("float64")
 
         return frame
 
@@ -101,19 +78,11 @@ class ModelService:
     ) -> dict:
         """Create a churn prediction."""
 
-        model_input = self.prepare_input(
-            payload
-        )
+        model_input = self.prepare_input(payload)
 
-        prediction = int(
-            self.model.predict(model_input)[0]
-        )
+        prediction = int(self.model.predict(model_input)[0])
 
-        churn_probability = float(
-            self.model.predict_proba(
-                model_input
-            )[0, 1]
-        )
+        churn_probability = float(self.model.predict_proba(model_input)[0, 1])
 
         return {
             "prediction": prediction,

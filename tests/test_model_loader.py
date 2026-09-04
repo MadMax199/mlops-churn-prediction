@@ -29,9 +29,7 @@ def test_prepare_input_contains_all_features() -> None:
         days_since_last_event=5,
     )
 
-    frame = ModelService.prepare_input(
-        payload
-    )
+    frame = ModelService.prepare_input(payload)
 
     assert isinstance(frame, pd.DataFrame)
     assert len(frame) == 1
@@ -44,27 +42,16 @@ def test_prepare_input_converts_numeric_features() -> None:
         total_amount=850.5,
     )
 
-    frame = ModelService.prepare_input(
-        payload
-    )
+    frame = ModelService.prepare_input(payload)
 
-    numeric_columns = [
-        column
-        for column in FEATURE_COLUMNS
-        if column not in STRING_COLUMNS
-    ]
+    numeric_columns = [column for column in FEATURE_COLUMNS if column not in STRING_COLUMNS]
 
-    assert all(
-        str(frame[column].dtype) == "float64"
-        for column in numeric_columns
-    )
+    assert all(str(frame[column].dtype) == "float64" for column in numeric_columns)
 
 
 def test_prepare_input_handles_missing_values() -> None:
     payload = PredictionRequest()
 
-    frame = ModelService.prepare_input(
-        payload
-    )
+    frame = ModelService.prepare_input(payload)
 
     assert frame.isna().all().all()

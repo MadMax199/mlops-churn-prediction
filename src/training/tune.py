@@ -37,12 +37,7 @@ def run() -> None:
         TARGET_COLUMN,
     ]
 
-    frame = (
-        spark
-        .table(data["gold_features_table"])
-        .select(*training_columns)
-        .toPandas()
-    )
+    frame = spark.table(data["gold_features_table"]).select(*training_columns).toPandas()
     validate_training_data(
         frame,
         ID_COLUMN,
@@ -60,19 +55,21 @@ def run() -> None:
         stratify=y,
     )
 
-    pipeline = Pipeline([
-        (
-            "preprocessor",
-            build_preprocessor(X_train),
-        ),
-        (
-            "model",
-            RandomForestClassifier(
-                random_state=split["random_state"],
-                n_jobs=1,
+    pipeline = Pipeline(
+        [
+            (
+                "preprocessor",
+                build_preprocessor(X_train),
             ),
-        ),
-    ])
+            (
+                "model",
+                RandomForestClassifier(
+                    random_state=split["random_state"],
+                    n_jobs=1,
+                ),
+            ),
+        ]
+    )
 
     parameter_space = {
         "model__n_estimators": [
@@ -129,24 +126,16 @@ def run() -> None:
         return_train_score=True,
     )
 
-    mlflow.set_tracking_uri(
-        config["mlflow"]["tracking_uri"]
-    )
-    mlflow.set_experiment(
-        config["mlflow"]["experiment_name"]
-    )
+    mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
+    mlflow.set_experiment(config["mlflow"]["experiment_name"])
 
-    with mlflow.start_run(
-        run_name="random_forest_tuned"
-    ):
+    with mlflow.start_run(run_name="random_forest_tuned"):
         search.fit(X_train, y_train)
 
         best_model = search.best_estimator_
 
         predictions = best_model.predict(X_test)
-        probabilities = best_model.predict_proba(
-            X_test
-        )[:, 1]
+        probabilities = best_model.predict_proba(X_test)[:, 1]
 
         metrics = evaluate(
             y_test,
@@ -155,20 +144,21 @@ def run() -> None:
         )
 
         best_parameters = {
-            key.replace("model__", ""): str(value)
-            for key, value in search.best_params_.items()
+            key.replace("model__", ""): str(value) for key, value in search.best_params_.items()
         }
 
-        mlflow.log_params({
-            "model": "random_forest_tuned",
-            "search_method": "randomized_search",
-            "optimization_metric": "average_precision",
-            "n_iter": 20,
-            "cv_folds": 3,
-            "test_size": split["test_size"],
-            "random_state": split["random_state"],
-            **best_parameters,
-        })
+        mlflow.log_params(
+            {
+                "model": "random_forest_tuned",
+                "search_method": "randomized_search",
+                "optimization_metric": "average_precision",
+                "n_iter": 20,
+                "cv_folds": 3,
+                "test_size": split["test_size"],
+                "random_state": split["random_state"],
+                **best_parameters,
+            }
+        )
 
         mlflow.log_metrics(metrics)
 
@@ -177,10 +167,7 @@ def run() -> None:
             search.best_score_,
         )
 
-        cv_results = (
-            pd.DataFrame(search.cv_results_)
-            .sort_values("rank_test_score")
-        )
+        cv_results = pd.DataFrame(search.cv_results_).sort_values("rank_test_score")
 
         mlflow.log_text(
             cv_results.to_csv(index=False),
@@ -190,16 +177,9 @@ def run() -> None:
         # Float-Signatur erlaubt fehlende numerische Werte.
         signature_input = X_train.head(100).copy()
 
-        integer_columns = (
-            signature_input
-            .select_dtypes(include=["integer"])
-            .columns
-        )
+        integer_columns = signature_input.select_dtypes(include=["integer"]).columns
 
-        signature_input[integer_columns] = (
-            signature_input[integer_columns]
-            .astype("float64")
-        )
+        signature_input[integer_columns] = signature_input[integer_columns].astype("float64")
 
         signature = infer_signature(
             signature_input,
@@ -211,10 +191,7 @@ def run() -> None:
             name="model",
             signature=signature,
             input_example=signature_input.head(3),
-            serialization_format=(
-                mlflow.sklearn
-                .SERIALIZATION_FORMAT_SKOPS
-            ),
+            serialization_format=(mlflow.sklearn.SERIALIZATION_FORMAT_SKOPS),
             skops_trusted_types=["numpy.dtype"],
         )
 
@@ -225,10 +202,7 @@ def run() -> None:
         print(round(search.best_score_, 4))
 
         print("\nTestmetriken:")
-        print({
-            key: round(value, 4)
-            for key, value in metrics.items()
-        })
+        print({key: round(value, 4) for key, value in metrics.items()})
 
 
 if __name__ == "__main__":

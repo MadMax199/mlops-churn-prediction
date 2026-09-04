@@ -1,4 +1,5 @@
 """Compare MLflow model runs and persist the selection result."""
+
 """Compare MLflow model runs and persist the selection result."""
 
 import mlflow
@@ -40,17 +41,12 @@ def get_latest_successful_runs(
     )
 
     if runs.empty:
-        raise ValueError(
-            "Im MLflow-Experiment wurden keine "
-            "erfolgreichen Runs gefunden."
-        )
+        raise ValueError("Im MLflow-Experiment wurden keine erfolgreichen Runs gefunden.")
 
     run_name_column = "tags.mlflow.runName"
 
     if run_name_column not in runs.columns:
-        raise ValueError(
-            "Die MLflow-Runs enthalten keine Run-Namen."
-        )
+        raise ValueError("Die MLflow-Runs enthalten keine Run-Namen.")
 
     runs["run_name"] = runs[run_name_column]
 
@@ -66,22 +62,12 @@ def get_latest_successful_runs(
         )
     )
 
-    missing_runs = set(RUN_NAMES) - set(
-        selected_runs["run_name"]
-    )
+    missing_runs = set(RUN_NAMES) - set(selected_runs["run_name"])
 
     if missing_runs:
-        raise ValueError(
-            "Folgende erfolgreichen Runs fehlen: "
-            f"{sorted(missing_runs)}"
-        )
+        raise ValueError(f"Folgende erfolgreichen Runs fehlen: {sorted(missing_runs)}")
 
-    return (
-        selected_runs
-        .set_index("run_name")
-        .loc[RUN_NAMES]
-        .reset_index()
-    )
+    return selected_runs.set_index("run_name").loc[RUN_NAMES].reset_index()
 
 
 def build_comparison(
@@ -105,21 +91,12 @@ def build_comparison(
     ].copy()
 
     comparison = comparison.rename(
-        columns={
-            f"metrics.{metric}": metric
-            for metric in COMPARISON_METRICS
-        }
+        columns={f"metrics.{metric}": metric for metric in COMPARISON_METRICS}
     )
 
-    available_metrics = [
-        metric
-        for metric in COMPARISON_METRICS
-        if metric in comparison.columns
-    ]
+    available_metrics = [metric for metric in COMPARISON_METRICS if metric in comparison.columns]
 
-    comparison[available_metrics] = comparison[
-        available_metrics
-    ].round(4)
+    comparison[available_metrics] = comparison[available_metrics].round(4)
 
     return comparison
 
@@ -132,24 +109,13 @@ def get_metrics(
     missing_metrics = [
         metric
         for metric in MODEL_METRICS
-        if (
-            f"metrics.{metric}" not in run_data.index
-            or pd.isna(run_data[f"metrics.{metric}"])
-        )
+        if (f"metrics.{metric}" not in run_data.index or pd.isna(run_data[f"metrics.{metric}"]))
     ]
 
     if missing_metrics:
-        raise ValueError(
-            "Im Run fehlen folgende Metriken: "
-            f"{missing_metrics}"
-        )
+        raise ValueError(f"Im Run fehlen folgende Metriken: {missing_metrics}")
 
-    return {
-        metric: float(
-            run_data[f"metrics.{metric}"]
-        )
-        for metric in MODEL_METRICS
-    }
+    return {metric: float(run_data[f"metrics.{metric}"]) for metric in MODEL_METRICS}
 
 
 def get_tuning_parameters(
@@ -202,17 +168,11 @@ def save_model_selection(
         selected_run = baseline
         selected_metrics = baseline_metrics
 
-    selected_run_id = str(
-        selected_run["run_id"]
-    )
+    selected_run_id = str(selected_run["run_id"])
 
-    baseline_run_id = str(
-        baseline["run_id"]
-    )
+    baseline_run_id = str(baseline["run_id"])
 
-    tuned_run_id = str(
-        tuned["run_id"]
-    )
+    tuned_run_id = str(tuned["run_id"])
 
     selection_summary = {
         "primary_metric": "pr_auc",
@@ -228,22 +188,24 @@ def save_model_selection(
         "tuned_parameters": tuned_parameters,
     }
 
-    with mlflow.start_run(
-        run_name="model_selection"
-    ):
-        mlflow.set_tags({
-            "pipeline_stage": "model_selection",
-            "selected_model": selected_model,
-            "selection_metric": "pr_auc",
-        })
+    with mlflow.start_run(run_name="model_selection"):
+        mlflow.set_tags(
+            {
+                "pipeline_stage": "model_selection",
+                "selected_model": selected_model,
+                "selection_metric": "pr_auc",
+            }
+        )
 
-        mlflow.log_params({
-            "selected_model": selected_model,
-            "selected_run_id": selected_run_id,
-            "baseline_run_id": baseline_run_id,
-            "tuned_run_id": tuned_run_id,
-            "selection_metric": "pr_auc",
-        })
+        mlflow.log_params(
+            {
+                "selected_model": selected_model,
+                "selected_run_id": selected_run_id,
+                "baseline_run_id": baseline_run_id,
+                "tuned_run_id": tuned_run_id,
+                "selection_metric": "pr_auc",
+            }
+        )
 
         mlflow.log_metric(
             "baseline_pr_auc",
@@ -292,51 +254,29 @@ def run() -> None:
 
     config = load_config().values
 
-    mlflow.set_tracking_uri(
-        config["mlflow"]["tracking_uri"]
-    )
+    mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
 
-    mlflow.set_experiment(
-        config["mlflow"]["experiment_name"]
-    )
+    mlflow.set_experiment(config["mlflow"]["experiment_name"])
 
-    experiment = mlflow.get_experiment_by_name(
-        config["mlflow"]["experiment_name"]
-    )
+    experiment = mlflow.get_experiment_by_name(config["mlflow"]["experiment_name"])
 
     if experiment is None:
-        raise ValueError(
-            "Das konfigurierte MLflow-Experiment "
-            "wurde nicht gefunden."
-        )
+        raise ValueError("Das konfigurierte MLflow-Experiment wurde nicht gefunden.")
 
-    selected_runs = get_latest_successful_runs(
-        experiment.experiment_id
-    )
+    selected_runs = get_latest_successful_runs(experiment.experiment_id)
 
-    comparison = build_comparison(
-        selected_runs
-    )
+    comparison = build_comparison(selected_runs)
 
     print("\nModellvergleich:")
     print(comparison.to_string(index=False))
 
-    baseline = selected_runs[
-        selected_runs["run_name"] == "random_forest"
-    ].iloc[0]
+    baseline = selected_runs[selected_runs["run_name"] == "random_forest"].iloc[0]
 
-    tuned = selected_runs[
-        selected_runs["run_name"]
-        == "random_forest_tuned"
-    ].iloc[0]
+    tuned = selected_runs[selected_runs["run_name"] == "random_forest_tuned"].iloc[0]
 
-    baseline_metrics = get_metrics(
-        baseline
-    )
+    baseline_metrics = get_metrics(baseline)
 
-    tuned_metrics = get_metrics(
-        tuned
-    )
+    tuned_metrics = get_metrics(tuned)
 
     baseline_pr_auc = baseline_metrics["pr_auc"]
     tuned_pr_auc = tuned_metrics["pr_auc"]
@@ -347,9 +287,7 @@ def run() -> None:
     print(f"Getunt:    {tuned_pr_auc:.4f}")
     print(f"Differenz: {difference:+.4f}")
 
-    tuned_parameters = get_tuning_parameters(
-        tuned
-    )
+    tuned_parameters = get_tuning_parameters(tuned)
 
     print("\nBeste Tuning-Parameter:")
 
@@ -366,20 +304,16 @@ def run() -> None:
         print(f"\nCV-PR-AUC: {cv_pr_auc:.4f}")
     else:
         cv_pr_auc = None
-        print(
-            "\nCV-PR-AUC wurde nicht protokolliert."
-        )
+        print("\nCV-PR-AUC wurde nicht protokolliert.")
 
-    selected_model, selected_run_id = (
-        save_model_selection(
-            comparison=comparison,
-            baseline=baseline,
-            tuned=tuned,
-            baseline_metrics=baseline_metrics,
-            tuned_metrics=tuned_metrics,
-            tuned_parameters=tuned_parameters,
-            cv_pr_auc=cv_pr_auc,
-        )
+    selected_model, selected_run_id = save_model_selection(
+        comparison=comparison,
+        baseline=baseline,
+        tuned=tuned,
+        baseline_metrics=baseline_metrics,
+        tuned_metrics=tuned_metrics,
+        tuned_parameters=tuned_parameters,
+        cv_pr_auc=cv_pr_auc,
     )
 
     print("\nGespeicherte Modellentscheidung:")
@@ -387,15 +321,9 @@ def run() -> None:
     print(f"Ausgewählter Run:    {selected_run_id}")
 
     if selected_model == "random_forest_tuned":
-        print(
-            "Ergebnis: Das getunte Modell erzielt "
-            "die höhere Test-PR-AUC."
-        )
+        print("Ergebnis: Das getunte Modell erzielt die höhere Test-PR-AUC.")
     else:
-        print(
-            "Ergebnis: Die Baseline erzielt mindestens "
-            "dieselbe Test-PR-AUC."
-        )
+        print("Ergebnis: Die Baseline erzielt mindestens dieselbe Test-PR-AUC.")
 
 
 if __name__ == "__main__":

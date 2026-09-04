@@ -5,7 +5,9 @@ from src.data.validation import validate_training_data
 
 
 def test_valid_training_contract():
-    validate_training_data(pd.DataFrame({"user_id": ["a", "b"], "churn": [0, 1]}), "user_id", "churn")
+    validate_training_data(
+        pd.DataFrame({"user_id": ["a", "b"], "churn": [0, 1]}), "user_id", "churn"
+    )
 
 
 def test_duplicate_user_is_rejected():

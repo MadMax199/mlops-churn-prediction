@@ -1,2 +1,1 @@
 """MLOps churn prediction package."""
-

@@ -13,50 +13,31 @@ def configure_databricks_auth() -> None:
     env_path = project_root / ".env"
 
     if not env_path.is_file():
-        raise FileNotFoundError(
-            f".env-Datei wurde nicht gefunden: {env_path}"
-        )
+        raise FileNotFoundError(f".env-Datei wurde nicht gefunden: {env_path}")
 
     load_dotenv(
         env_path,
         override=True,
     )
 
-    profile = os.getenv(
-        "DATABRICKS_CONFIG_PROFILE"
-    )
+    profile = os.getenv("DATABRICKS_CONFIG_PROFILE")
 
-    cli_path_value = os.getenv(
-        "DATABRICKS_CLI_PATH"
-    )
+    cli_path_value = os.getenv("DATABRICKS_CLI_PATH")
 
     if not profile:
-        raise ValueError(
-            "DATABRICKS_CONFIG_PROFILE fehlt "
-            "in der .env-Datei."
-        )
+        raise ValueError("DATABRICKS_CONFIG_PROFILE fehlt in der .env-Datei.")
 
     if not cli_path_value:
-        raise ValueError(
-            "DATABRICKS_CLI_PATH fehlt "
-            "in der .env-Datei."
-        )
+        raise ValueError("DATABRICKS_CLI_PATH fehlt in der .env-Datei.")
 
     cli_path = Path(cli_path_value)
 
     if not cli_path.is_file():
-        raise FileNotFoundError(
-            "Databricks CLI wurde nicht gefunden: "
-            f"{cli_path}"
-        )
+        raise FileNotFoundError(f"Databricks CLI wurde nicht gefunden: {cli_path}")
 
     cli_directory = str(cli_path.parent)
 
-    os.environ["PATH"] = (
-        cli_directory
-        + os.pathsep
-        + os.environ.get("PATH", "")
-    )
+    os.environ["PATH"] = cli_directory + os.pathsep + os.environ.get("PATH", "")
 
     print(f"Databricks-Profil: {profile}")
     print(f"Databricks CLI:    {cli_path}")

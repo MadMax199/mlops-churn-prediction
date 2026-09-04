@@ -5,7 +5,14 @@ from mlflow.models import infer_signature
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, average_precision_score, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
@@ -41,14 +48,17 @@ def run() -> None:
         "dummy": DummyClassifier(strategy="prior"),
         "logistic_regression": LogisticRegression(max_iter=1000, class_weight="balanced"),
         "random_forest": RandomForestClassifier(
-            n_estimators=250, max_depth=12, class_weight="balanced", n_jobs=-1,
+            n_estimators=250,
+            max_depth=12,
+            class_weight="balanced",
+            n_jobs=-1,
             random_state=split["random_state"],
         ),
     }
 
     mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
     mlflow.set_experiment(config["mlflow"]["experiment_name"])
-    
+
     for name, estimator in models.items():
         pipeline = Pipeline([("preprocessor", build_preprocessor(X_train)), ("model", estimator)])
         with mlflow.start_run(run_name=name):
@@ -56,26 +66,27 @@ def run() -> None:
             predictions = pipeline.predict(X_test)
             probabilities = pipeline.predict_proba(X_test)[:, 1]
             metrics = evaluate(y_test, predictions, probabilities)
-            mlflow.log_params({
-                "model": name,
-                "artifact_type": "sklearn_pipeline",
-                "serving_candidate": str(name != "dummy").lower(),
-                "test_size": split["test_size"],
-                "random_state": split["random_state"],
-            })
+            mlflow.log_params(
+                {
+                    "model": name,
+                    "artifact_type": "sklearn_pipeline",
+                    "serving_candidate": str(name != "dummy").lower(),
+                    "test_size": split["test_size"],
+                    "random_state": split["random_state"],
+                }
+            )
             mlflow.log_metrics(metrics)
             signature = infer_signature(X_train, pipeline.predict(X_train))
             mlflow.sklearn.log_model(
-                    pipeline,
-                    name="model",
-                    signature=signature,
-                    input_example=X_train.head(3),
-                    serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_SKOPS,
-                    skops_trusted_types=["numpy.dtype"],
+                pipeline,
+                name="model",
+                signature=signature,
+                input_example=X_train.head(3),
+                serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_SKOPS,
+                skops_trusted_types=["numpy.dtype"],
             )
             print(name, {key: round(value, 4) for key, value in metrics.items()})
 
 
 if __name__ == "__main__":
     run()
-

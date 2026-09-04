@@ -65,7 +65,11 @@ st.subheader("Highest-risk customers")
 display_columns = ["user_id", "country", "canal", "order_count", "event_count", "churn_probability"]
 st.dataframe(
     customers.sort_values("churn_probability", ascending=False)[display_columns].head(50),
-    column_config={"churn_probability": st.column_config.ProgressColumn("Churn risk", min_value=0.0, max_value=1.0)},
+    column_config={
+        "churn_probability": st.column_config.ProgressColumn(
+            "Churn risk", min_value=0.0, max_value=1.0
+        )
+    },
     use_container_width=True,
     hide_index=True,
 )
