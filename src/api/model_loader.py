@@ -63,7 +63,7 @@ class ModelService:
             columns=FEATURE_COLUMNS,
         )
 
-        frame = frame.replace({None: np.nan})
+        frame = frame.replace({None: np.nan}).infer_objects(copy=False)
 
         numeric_columns = [column for column in FEATURE_COLUMNS if column not in STRING_COLUMNS]
 

@@ -1,43 +1,58 @@
 """Configure Databricks authentication for the project."""
 
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+
 
 def configure_databricks_auth() -> None:
-    """Load Databricks authentication settings from .env."""
+    """Configure local or environment-based Databricks authentication."""
 
     project_root = Path(__file__).resolve().parents[2]
     env_path = project_root / ".env"
 
-    if not env_path.is_file():
-        raise FileNotFoundError(f".env-Datei wurde nicht gefunden: {env_path}")
+    if env_path.is_file():
+        load_dotenv(env_path, override=False)
 
-    load_dotenv(
-        env_path,
-        override=True,
-    )
+    # Container, CI/CD oder Cloud-Umgebung
+    if os.getenv("DATABRICKS_HOST"):
+        logger.info("Using environment-based Databricks authentication")
+        return
 
+    # Lokale Entwicklung über das Databricks-CLI-Profil
     profile = os.getenv("DATABRICKS_CONFIG_PROFILE")
-
     cli_path_value = os.getenv("DATABRICKS_CLI_PATH")
 
     if not profile:
-        raise ValueError("DATABRICKS_CONFIG_PROFILE fehlt in der .env-Datei.")
+        raise ValueError(
+            "Keine Databricks-Authentifizierung konfiguriert. "
+            "Setze DATABRICKS_HOST und passende Zugangsdaten oder "
+            "DATABRICKS_CONFIG_PROFILE für die lokale CLI-Anmeldung."
+        )
 
-    if not cli_path_value:
-        raise ValueError("DATABRICKS_CLI_PATH fehlt in der .env-Datei.")
+    if cli_path_value:
+        cli_path = Path(cli_path_value)
 
-    cli_path = Path(cli_path_value)
+        if not cli_path.is_file():
+            raise FileNotFoundError(f"Databricks CLI wurde nicht gefunden: {cli_path}")
 
-    if not cli_path.is_file():
-        raise FileNotFoundError(f"Databricks CLI wurde nicht gefunden: {cli_path}")
+        cli_directory = str(cli_path.parent)
+        current_path = os.environ.get("PATH", "")
 
-    cli_directory = str(cli_path.parent)
+        if cli_directory not in current_path.split(os.pathsep):
+            os.environ["PATH"] = cli_directory + os.pathsep + current_path
 
-    os.environ["PATH"] = cli_directory + os.pathsep + os.environ.get("PATH", "")
-
-    print(f"Databricks-Profil: {profile}")
-    print(f"Databricks CLI:    {cli_path}")
+        logger.info(
+            "Using Databricks CLI profile '%s' with CLI '%s'",
+            profile,
+            cli_path,
+        )
+    else:
+        logger.info(
+            "Using Databricks configuration profile '%s'",
+            profile,
+        )
