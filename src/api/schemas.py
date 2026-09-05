@@ -81,3 +81,27 @@ class ModelInfoResponse(BaseModel):
     model_version: str
     model_alias: str
     model_uri: str
+
+
+class MonitoringResponse(BaseModel):
+    """Aggregated operational prediction metrics."""
+
+    total_requests: int = Field(ge=0)
+    successful_predictions: int = Field(ge=0)
+    failed_predictions: int = Field(ge=0)
+    predicted_churn_count: int = Field(ge=0)
+
+    predicted_churn_rate: float = Field(
+        ge=0,
+        le=1,
+    )
+    average_churn_probability: float = Field(
+        ge=0,
+        le=1,
+    )
+    average_latency_ms: float = Field(ge=0)
+
+    model_name: str
+    model_version: str
+    started_at: str
+    last_request_at: str | None

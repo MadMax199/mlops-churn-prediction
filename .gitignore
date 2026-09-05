@@ -31,6 +31,8 @@ data/raw/
 data/processed/
 artifacts/
 mlruns/
+data/reference/
+reports/
 
 # IDE and operating system
 .vscode/

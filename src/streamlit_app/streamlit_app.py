@@ -8,7 +8,6 @@ from typing import Any
 import requests
 import streamlit as st
 
-
 API_BASE_URL = os.getenv(
     "CHURN_API_URL",
     "http://127.0.0.1:8000",

@@ -101,6 +101,26 @@ def test_model_info(client: TestClient) -> None:
     assert result["model_uri"].endswith("@Champion")
 
 
+def test_monitoring_starts_empty(
+    client: TestClient,
+) -> None:
+    response = client.get("/monitoring")
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total_requests"] == 0
+    assert result["successful_predictions"] == 0
+    assert result["failed_predictions"] == 0
+    assert result["predicted_churn_count"] == 0
+    assert result["predicted_churn_rate"] == 0
+    assert result["average_churn_probability"] == 0
+    assert result["average_latency_ms"] == 0
+    assert result["model_version"] == "1"
+    assert result["last_request_at"] is None
+
+
 def test_predict(client: TestClient) -> None:
     response = client.post(
         "/predict",
@@ -115,6 +135,32 @@ def test_predict(client: TestClient) -> None:
     assert 0 <= result["churn_probability"] <= 1
     assert result["model_version"] == "1"
     assert result["model_alias"] == "Champion"
+
+
+def test_successful_prediction_updates_monitoring(
+    client: TestClient,
+) -> None:
+    prediction_response = client.post(
+        "/predict",
+        json=VALID_PAYLOAD,
+    )
+
+    assert prediction_response.status_code == 200
+
+    monitoring_response = client.get("/monitoring")
+
+    assert monitoring_response.status_code == 200
+
+    result = monitoring_response.json()
+
+    assert result["total_requests"] == 1
+    assert result["successful_predictions"] == 1
+    assert result["failed_predictions"] == 0
+    assert result["predicted_churn_count"] == 1
+    assert result["predicted_churn_rate"] == 1
+    assert result["average_churn_probability"] == pytest.approx(0.8274)
+    assert result["average_latency_ms"] >= 0
+    assert result["last_request_at"] is not None
 
 
 def test_predict_rejects_negative_values(
@@ -151,3 +197,10 @@ def test_predict_handles_model_failure(
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Die Vorhersage ist fehlgeschlagen."}
+
+    monitoring_response = client.get("/monitoring")
+    monitoring_result = monitoring_response.json()
+
+    assert monitoring_result["total_requests"] == 1
+    assert monitoring_result["successful_predictions"] == 0
+    assert monitoring_result["failed_predictions"] == 1

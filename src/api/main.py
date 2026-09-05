@@ -2,6 +2,8 @@
 
 import logging
 from contextlib import asynccontextmanager
+from time import perf_counter
+from uuid import uuid4
 
 from fastapi import (
     Depends,
@@ -15,8 +17,12 @@ from src.api.model_loader import ModelService
 from src.api.schemas import (
     HealthResponse,
     ModelInfoResponse,
+    MonitoringResponse,
     PredictionRequest,
     PredictionResponse,
+)
+from src.monitoring.prediction_monitor import (
+    PredictionMonitor,
 )
 
 logging.basicConfig(
@@ -29,15 +35,21 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the model when the API starts."""
+    """Load the model and initialize monitoring."""
 
     logger.info("Loading registered Champion model")
 
-    app.state.model_service = ModelService()
+    model_service = ModelService()
+
+    app.state.model_service = model_service
+    app.state.prediction_monitor = PredictionMonitor(
+        model_name=model_service.model_name,
+        model_version=model_service.model_version,
+    )
 
     logger.info(
         "Model version %s loaded",
-        app.state.model_service.model_version,
+        model_service.model_version,
     )
 
     yield
@@ -48,7 +60,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Churn Prediction API",
     description=("Prediction API for the registered MLflow Champion model."),
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
@@ -73,6 +85,26 @@ def get_model_service(
     return model_service
 
 
+def get_prediction_monitor(
+    request: Request,
+) -> PredictionMonitor:
+    """Return the initialized prediction monitor."""
+
+    prediction_monitor = getattr(
+        request.app.state,
+        "prediction_monitor",
+        None,
+    )
+
+    if prediction_monitor is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Das Monitoring ist nicht initialisiert.",
+        )
+
+    return prediction_monitor
+
+
 @app.get("/")
 def root() -> dict[str, str]:
     """Return basic API information."""
@@ -88,7 +120,9 @@ def root() -> dict[str, str]:
     response_model=HealthResponse,
 )
 def health(
-    model_service: ModelService = Depends(get_model_service),  # noqa: B008
+    model_service: ModelService = Depends(  # noqa: B008
+        get_model_service
+    ),
 ) -> HealthResponse:
     """Return the API health status."""
 
@@ -103,11 +137,27 @@ def health(
     response_model=ModelInfoResponse,
 )
 def model_info(
-    model_service: ModelService = Depends(get_model_service),  # noqa: B008
+    model_service: ModelService = Depends(  # noqa: B008
+        get_model_service
+    ),
 ) -> ModelInfoResponse:
     """Return information about the loaded model."""
 
     return ModelInfoResponse(**model_service.get_model_info())
+
+
+@app.get(
+    "/monitoring",
+    response_model=MonitoringResponse,
+)
+def monitoring(
+    prediction_monitor: PredictionMonitor = Depends(  # noqa: B008
+        get_prediction_monitor
+    ),
+) -> MonitoringResponse:
+    """Return aggregated operational metrics."""
+
+    return MonitoringResponse(**prediction_monitor.snapshot())
 
 
 @app.post(
@@ -116,24 +166,45 @@ def model_info(
 )
 def predict(
     payload: PredictionRequest,
-    model_service: ModelService = Depends(get_model_service),  # noqa: B008
+    model_service: ModelService = Depends(  # noqa: B008
+        get_model_service
+    ),
+    prediction_monitor: PredictionMonitor = Depends(  # noqa: B008
+        get_prediction_monitor
+    ),
 ) -> PredictionResponse:
     """Create a churn prediction."""
 
+    request_id = uuid4().hex
+    started_at = perf_counter()
+
     try:
         prediction = model_service.predict(payload)
+        response = PredictionResponse(**prediction)
 
-        logger.info(
-            "Prediction completed with model version %s",
-            model_service.model_version,
+        latency_ms = (perf_counter() - started_at) * 1000
+
+        prediction_monitor.record_success(
+            request_id=request_id,
+            prediction=response.prediction,
+            churn_probability=response.churn_probability,
+            latency_ms=latency_ms,
         )
 
-        return PredictionResponse(**prediction)
+        return response
 
     except ValueError as error:
+        latency_ms = (perf_counter() - started_at) * 1000
+
+        prediction_monitor.record_failure(
+            request_id=request_id,
+            latency_ms=latency_ms,
+            error=error,
+        )
+
         logger.warning(
-            "Invalid prediction input: %s",
-            error,
+            "Invalid prediction input request_id=%s",
+            request_id,
         )
 
         raise HTTPException(
@@ -142,7 +213,18 @@ def predict(
         ) from error
 
     except Exception as error:
-        logger.exception("Prediction failed")
+        latency_ms = (perf_counter() - started_at) * 1000
+
+        prediction_monitor.record_failure(
+            request_id=request_id,
+            latency_ms=latency_ms,
+            error=error,
+        )
+
+        logger.exception(
+            "Prediction failed request_id=%s",
+            request_id,
+        )
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
