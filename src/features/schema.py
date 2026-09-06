@@ -1,6 +1,13 @@
 ID_COLUMN = "user_id"
 TARGET_COLUMN = "churn"
 
+DIRECT_IDENTIFIER_COLUMNS = [
+    "email",
+    "firstname",
+    "lastname",
+    "address",
+]
+
 FEATURE_COLUMNS = [
     "age_group",
     "gender",
@@ -17,4 +24,10 @@ FEATURE_COLUMNS = [
     "days_since_last_activity",
     "days_since_last_transaction",
     "days_since_last_event",
+]
+
+GOLD_OUTPUT_COLUMNS = [
+    ID_COLUMN,
+    *FEATURE_COLUMNS,
+    TARGET_COLUMN,
 ]

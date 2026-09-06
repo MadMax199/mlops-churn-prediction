@@ -4,7 +4,7 @@ from pyspark.sql import functions as F
 from src.config import load_config
 from src.data.write import write_delta_table
 from src.session import get_spark_session
-
+from src.features.schema import GOLD_OUTPUT_COLUMNS
 
 def aggregate_orders(df: DataFrame) -> DataFrame:
     """Aggregiert den Orders DataFrame auf User Ebene."""
@@ -52,6 +52,7 @@ def build_customer_features(users: DataFrame, orders: DataFrame, events: DataFra
         .withColumn("days_since_last_transaction", F.datediff(today, "last_transaction"))
         .withColumn("days_since_last_event", F.datediff(today, "last_event"))
         .drop("creation_date", "last_activity_date", "last_transaction", "last_event")
+        .select(*GOLD_OUTPUT_COLUMNS)
     )
 
 

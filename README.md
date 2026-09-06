@@ -74,15 +74,44 @@ DATABRICKS_CLI_PATH=C:\Users\<BENUTZER>\.vscode\extensions\databricks.databricks
 Aktuellen CLI-Pfad ermitteln:
 
 ```powershell
-Get-ChildItem "$env:USERPROFILE\.vscode\extensions" `
+$databricksCli = Get-ChildItem "$env:USERPROFILE\.vscode\extensions" `
     -Recurse `
     -Filter databricks.exe `
     -File |
     Sort-Object LastWriteTime -Descending |
     Select-Object -First 1 -ExpandProperty FullName
+$databricksCli
+Test-Path $databricksCli
 ```
 
-Databricks-Verbindung prüfen:
+Die Databricks-CLI ist Bestandteil der VS-Code-Erweiterung. Der Installationspfad enthält deren Versionsnummer und kann sich nach einem Update ändern. `Test-Path` muss deshalb `True` zurückgeben.
+
+Die Einstellungen für das aktuelle PowerShell-Terminal setzen:
+
+```powershell
+$env:DATABRICKS_CLI_PATH = $databricksCli
+$env:DATABRICKS_CONFIG_PROFILE = "max"
+$env:DATABRICKS_SERVERLESS_COMPUTE_ID = "auto"
+```
+
+Den ermittelten CLI-Pfad zusätzlich in der lokalen `.env` unter `DATABRICKS_CLI_PATH` eintragen. Die `.env` wird nicht versioniert.
+
+Anmeldung prüfen:
+
+```powershell
+& $databricksCli auth profiles
+& $databricksCli current-user me --profile max
+```
+
+Falls das Profil nicht mehr gültig ist, die Browser-Anmeldung erneuern:
+
+```powershell
+& $databricksCli auth login `
+    --host "https://dbc-ffd64f04-ac70.cloud.databricks.com" `
+    --profile max
+```
+
+Databricks-Verbindung des Projekts prüfen:
 
 ```powershell
 python -m scripts.test_connection
@@ -136,6 +165,20 @@ SHOW TABLES IN main.mlops_churn;
 SELECT *
 FROM main.mlops_churn.gold_customer_features
 LIMIT 10;
+```
+
+Die Gold-Tabelle wird über eine Positivliste auf `user_id`, die definierten Modellfeatures und `churn` begrenzt. Direkte Identifikatoren dürfen nicht enthalten sein.
+
+Das gespeicherte Schema lokal prüfen:
+
+```powershell
+python -c "from src.session import get_spark_session; df=get_spark_session().table('main.mlops_churn.gold_customer_features'); forbidden={'email','firstname','lastname','address'}; print(df.columns); print('Zeilen:', df.count()); print('Unerlaubte Spalten:', sorted(forbidden.intersection(df.columns))); assert not forbidden.intersection(df.columns)"
+```
+
+Erwartete Abschlussmeldung:
+
+```text
+Unerlaubte Spalten: []
 ```
 
 ### 6. Basismodelle trainieren
@@ -357,9 +400,7 @@ Streamlit wird in einem zweiten PowerShell-Terminal gestartet. Der FastAPI-Conta
 ```powershell
 cd C:\Users\<BENUTZER>\mlops-churn-prediction
 .\.venv\Scripts\Activate.ps1
-
 $env:CHURN_API_URL="http://127.0.0.1:8000"
-
 python -m streamlit run src\streamlit_app\streamlit_app.py
 ```
 
@@ -433,9 +474,13 @@ reports/drift_report.csv
 Die Bewertung erfolgt anhand des Population Stability Index:
 
 | PSI | Bewertung |
+
 |---:|---|
+
 | `< 0,10` | stabil |
+
 | `0,10 bis < 0,25` | auffällig |
+
 | `>= 0,25` | deutlicher Drift |
 
 Direkt aufeinanderfolgende Läufe verwenden zunächst dieselben Gold-Daten. Deshalb werden dabei PSI-Werte nahe `0` erwartet.
@@ -465,7 +510,14 @@ Der Push startet automatisch den Workflow:
 .github/workflows/ci.yml
 ```
 
-GitHub Actions führt anschließend Ruff, Pytest und die Coverage-Erstellung aus.
+GitHub Actions führt anschließend Ruff, Pytest, die Coverage-Erstellung sowie den Docker-Build mit Container-Smoke-Test aus.
+
+Erwartete erfolgreiche Jobs:
+
+```text
+Ruff and pytest
+Docker build and smoke test
+```
 
 ## Kompakter Ablauf nach abgeschlossener Einrichtung
 
@@ -473,7 +525,6 @@ Wenn Umgebung, Authentifizierung und Modellregistrierung bereits eingerichtet si
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-
 python -m scripts.test_connection
 python -m src.data.pipeline
 python -m src.features.build_features
