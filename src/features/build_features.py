@@ -3,8 +3,9 @@ from pyspark.sql import functions as F
 
 from src.config import load_config
 from src.data.write import write_delta_table
-from src.session import get_spark_session
 from src.features.schema import GOLD_OUTPUT_COLUMNS
+from src.session import get_spark_session
+
 
 def aggregate_orders(df: DataFrame) -> DataFrame:
     """Aggregiert den Orders DataFrame auf User Ebene."""
